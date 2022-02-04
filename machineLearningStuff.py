@@ -68,21 +68,12 @@ class dataSet:
                 tempList.append(self.attributes[x][-1])
                 self.discreteList.append(tempList)
 
-    def ID3Algorithm(self):
-        print()
-
-    def getInformationGain(self, featureToSplitOn):
-        print()
-
-    def calculateEntropy():
-        print()
-
-    def getEntropyOfTargetFeature(self, arr):
+    def getEntropyOfFeature(self, arr):
 
         list_set = set(arr)
         unique_list = (list(list_set))
 
-        def getEntropyOfTargetHelper(n):
+        def getEntropyHelper(n):
             cnt = 0
             for i in unique_list:
                 if(i == n):
@@ -94,15 +85,25 @@ class dataSet:
             newAns = round(newAns, 4)
             return newAns
 
-        result = map(getEntropyOfTargetHelper, unique_list)
+        result = map(getEntropyHelper, unique_list)
         result = list(result)
-        print(result)
 
         cnt = 0.00
         for x in result:
             cnt = cnt + x
         return cnt
 
+    def getInformationGain(self, arr):
+        targetFeatureEntropy = self.getEntropyOfFeature(arr[-1])
+        entropyArray = []
+        arrWithoutTarget = arr[:-1]
+        for feature in arrWithoutTarget:
+            entropy = self.getEntropyOfFeature(feature)
+            entropyArray.append(round((-1 *(targetFeatureEntropy - entropy)),4))
+        return list(entropyArray)
+
+    def id3Algorithm(self):
+        print(self.getInformationGain(self.myDataSetSorted))
 
 class Node:
     def __init__(self):
@@ -116,8 +117,8 @@ data = dataSet()
 data.getDataSet()
 data.getSortedData()
 data.getMinMaxAndDiscreteFeatures()
+data.id3Algorithm()
 
-setEntropy = data.getEntropyOfTargetFeature(list(data.myDataSetSorted[-1]))
 
 
 
