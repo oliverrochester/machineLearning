@@ -1,12 +1,13 @@
-from os import write
+from asyncio.windows_events import NULL
 import math
+from re import I
 
 class dataSet:
     def __init__(self):
         self.myDataSet = []
         self.attributes = []
         self.myDataSetSorted = []
-        self.minMaxList = []            #formatted [ [attribute, max, min], [attribute, max, min]... ]
+        self.minMaxList = []         #formatted [ [attribute, max, min], [attribute, max, min]... ]
         self.discreteList = []       #foramtted [ [attribute, attribute values], [attribute, attribute values]... ]
 
     def getDataSet(self):
@@ -75,11 +76,11 @@ class dataSet:
 
         def getEntropyHelper(n):
             cnt = 0
-            for i in unique_list:
+            for i in arr:
                 if(i == n):
-                    cnt  = cnt + 1
+                    cnt = cnt + 1
 
-            x = round((cnt/ len(unique_list)),4) 
+            x = round((cnt/ len(arr)),4) 
             ans = -1 * (math.log(x) / math.log(2))
             newAns = float(x) * float(ans)
             newAns = round(newAns, 4)
@@ -92,18 +93,31 @@ class dataSet:
         for x in result:
             cnt = cnt + x
         return cnt
-
+ 
     def getInformationGain(self, arr):
-        targetFeatureEntropy = self.getEntropyOfFeature(arr[-1])
-        entropyArray = []
+        finalInfoGainArray = []
+        entropy = 0.00
+        parentEntropy = self.getEntropyOfFeature(arr[-1])
+        finalEntropyArray = []
         arrWithoutTarget = arr[:-1]
-        for feature in arrWithoutTarget:
-            entropy = self.getEntropyOfFeature(feature)
-            entropyArray.append(round((-1 *(targetFeatureEntropy - entropy)),4))
-        return list(entropyArray)
-
-    def id3Algorithm(self):
-        print(self.getInformationGain(self.myDataSetSorted))
+        x = 0
+        while(x < len(arrWithoutTarget)):
+            for feature in arrWithoutTarget:
+                copyParentEntropy = parentEntropy
+                valueArray = []
+                uniqueSet = set(feature)
+                uniqueSet = (list(uniqueSet))
+                for value in uniqueSet:
+                    for targetValue in self.myDataSet:
+                        if(value == targetValue[x]):
+                            valueArray.append(targetValue[-1])
+                    entropy = self.getEntropyOfFeature(valueArray)
+                    copyParentEntropy = copyParentEntropy - ((len(valueArray) / len(self.myDataSet[-1])) * entropy)
+                    finalEntropyArray.append(round((-1 *(copyParentEntropy - entropy)),4))
+                    valueArray = []
+            finalInfoGainArray.append(copyParentEntropy)
+            x = x + 1
+        return finalInfoGainArray
 
 class Node:
     def __init__(self):
@@ -112,12 +126,24 @@ class Node:
         self.right = None
         self.targetFeatureValue = None
 
+class id3Algorithm:
+    def __init__(self):
+        self.informationGainArray = NULL
+        self.rootNode = NULL
 
-data = dataSet()
-data.getDataSet()
-data.getSortedData()
-data.getMinMaxAndDiscreteFeatures()
-data.id3Algorithm()
+    def id3Algorithm(self):
+        data = dataSet()
+        data.getDataSet()
+        data.getSortedData()
+        data.getMinMaxAndDiscreteFeatures()
+        infoGainArray = data.getInformationGain(data.myDataSetSorted)
+        print(str(infoGainArray))
+
+
+id3 = id3Algorithm()
+id3.id3Algorithm()
+
+
 
 
 
