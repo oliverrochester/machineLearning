@@ -122,14 +122,16 @@ class dataSet:
 class Node:
     def __init__(self):
         self.parent = None
-        self.left = None
-        self.right = None
+        self.children = []
         self.targetFeatureValue = None
 
 class id3Algorithm:
     def __init__(self):
         self.informationGainArray = NULL
         self.rootNode = NULL
+
+    def createDecisionTree(self, infoGainArray):
+        print()
 
     def id3Algorithm(self):
         data = dataSet()
@@ -138,6 +140,11 @@ class id3Algorithm:
         data.getMinMaxAndDiscreteFeatures()
         infoGainArray = data.getInformationGain(data.myDataSetSorted)
         print(str(infoGainArray))
+        self.createDecisionTree(infoGainArray)
+
+    
+
+
 
 
 id3 = id3Algorithm()
