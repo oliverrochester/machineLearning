@@ -2,6 +2,8 @@ from asyncio.windows_events import NULL
 import math
 from re import I
 
+from numpy import array
+
 class dataSet:
     def __init__(self):
         self.myDataSet = []
@@ -41,7 +43,10 @@ class dataSet:
             else:
                 subDataArr = x.split(',')
                 dataArr.append(subDataArr)
-        self.myDataSet = dataArr
+        # self.myDataSet = dataArr[1:]
+        for i in self.myDataSet:
+            print(i)
+        print('\n')
         self.attributes = attrArr
 
     def getSortedData(self):
@@ -50,13 +55,14 @@ class dataSet:
             newlist = [feature[x] for feature in self.myDataSet]
             finalData.append(newlist)
         self.myDataSetSorted = finalData
+        self.myDataSetSorted = self.myDataSetSorted[1:]
 
     def getMinMaxAndDiscreteFeatures(self):
         for x in range(0, len(self.attributes)):
             if(self.attributes[x][-1].lower() == "numeric" or self.attributes[x][-1].lower() == "real"):
                 results = []
                 for num in self.myDataSetSorted[x]:
-                    results.append(float(num))
+                    results.append(num)
                     tempList = []
                     tempList.append(self.attributes[x][-2])
                     tempList.append(str(max(results)))
@@ -98,24 +104,35 @@ class dataSet:
         finalInfoGainArray = []
         entropy = 0.00
         parentEntropy = self.getEntropyOfFeature(arr[-1])
+        print("parent entropy: " + str(parentEntropy))
         finalEntropyArray = []
         arrWithoutTarget = arr[:-1]
+        for i in arrWithoutTarget:
+            print(i)
+        print('\n')
         x = 0
         while(x < len(arrWithoutTarget)):
+            print(x)
             for feature in arrWithoutTarget:
                 copyParentEntropy = parentEntropy
                 valueArray = []
                 uniqueSet = set(feature)
                 uniqueSet = (list(uniqueSet))
+                print(uniqueSet)
                 for value in uniqueSet:
+                    print("interating on: " + value)
                     for targetValue in self.myDataSet:
                         if(value == targetValue[x]):
                             valueArray.append(targetValue[-1])
+                    print(valueArray)
                     entropy = self.getEntropyOfFeature(valueArray)
+                    print("entropy: " + str(entropy))
+                    
                     copyParentEntropy = copyParentEntropy - ((len(valueArray) / len(self.myDataSet[-1])) * entropy)
                     finalEntropyArray.append(round((-1 *(copyParentEntropy - entropy)),4))
                     valueArray = []
             finalInfoGainArray.append(copyParentEntropy)
+            print('\n')
             x = x + 1
         return finalInfoGainArray
 
