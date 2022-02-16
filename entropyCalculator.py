@@ -1,6 +1,6 @@
 import math
 
-dataArray = ['63-83','63-83','84-104', 'pie']
+dataArray = ['chapparal','chapparal','chapparal','riparian','riparian','connifer','connifer']
 
 list_set = set(dataArray)
 unique_list = (list(list_set))
