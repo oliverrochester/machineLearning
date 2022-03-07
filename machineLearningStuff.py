@@ -1,6 +1,8 @@
 from asyncio.windows_events import NULL
+from logging import root
 import math
 from re import I
+from typing import final
 
 from numpy import array
 
@@ -108,7 +110,7 @@ class dataSet:
         finalInfoGainArray = []
         entropy = 0.00
         parentEntropy = self.getEntropyOfFeature(arr[-1])
-        print("parent entropy: " + str(parentEntropy))
+        # print("parent entropy: " + str(parentEntropy))
         arrWithoutTarget = arr[:-1]
         
         x = 0
@@ -117,17 +119,17 @@ class dataSet:
             valueArray = []
             uniqueSet = set(feature)
             uniqueSet = (list(uniqueSet))
-            print(uniqueSet)
+            # print(uniqueSet)
             for value in uniqueSet:
-                print("interating on: " + value)
+                # print("interating on: " + value)
                 for targetValue in self.myDataSet:
                     if(value == targetValue[x]):
                         valueArray.append(targetValue[-1])
-                print(valueArray)
+                # print(valueArray)
                 entropy = self.getEntropyOfFeature(valueArray)
-                print("entropy: " + str(entropy))
+                # print("entropy: " + str(entropy))
                 copyParentEntropy = copyParentEntropy - ((len(valueArray) / len(self.myDataSetSorted[-1])) * entropy)
-                print(copyParentEntropy)
+                # print(copyParentEntropy)
                 valueArray = []
                 print('\n')
             x = x + 1
@@ -136,11 +138,21 @@ class dataSet:
         return finalInfoGainArray
 
 class Node:
-    def __init__(self, parent, instancesArr, targetFeature):
+    def __init__(self, nodeType, path, children, nodeLabel, parent, instancesArr):
+        self.nodeType = nodeType
         self.parent = parent
         self.routes = instancesArr
-        self.children = []
-        self.targetFeatureValue = targetFeature
+        self.children = children
+        self.nodeLabel = nodeLabel
+        self.path = path
+
+    def sortData(self, arr):
+        print(arr)
+        finalData = []
+        for x in range(0, len(arr[1])):
+            newlist = [val[x] for val in arr]
+            finalData.append(newlist)
+        return finalData
 
     def getInstances(self,infoGainArray, instances, attributes):
         # print(str(infoGainArray))
@@ -194,8 +206,8 @@ class Node:
         finalInfoGainArray = []
         entropy = 0.00
         parentEntropy = self.getEntropyOfFeature(sortedData[-1])
-        print('\n')
-        print("parent entropy: " + str(parentEntropy))
+        # print('\n')
+        # print("parent entropy: " + str(parentEntropy))
         arrWithoutTarget = sortedData[:-1]
         
         x = 0
@@ -204,82 +216,112 @@ class Node:
             valueArray = []
             uniqueSet = set(feature)
             uniqueSet = (list(uniqueSet))
-            print(uniqueSet)
+            # print(uniqueSet)
             for value in uniqueSet:
-                print("interating on: " + value)
+                # print("interating on: " + value)
                 for targetValue in arr:
                     if(value == targetValue[x]):
                         valueArray.append(targetValue[-1])
-                print(valueArray)
+                # print(valueArray)
                 entropy = self.getEntropyOfFeature(valueArray)
-                print("entropy: " + str(entropy))
+                # print("entropy: " + str(entropy))
                 copyParentEntropy = copyParentEntropy - ((len(valueArray) / len(sortedData[-1])) * entropy)
-                print(copyParentEntropy)
+                # print(copyParentEntropy)
                 valueArray = []
-                print('\n')
+                
             x = x + 1
             finalInfoGainArray.append(round(copyParentEntropy, 4))  
         
         return finalInfoGainArray
 
-    def createDecisionTree(self, route, attributes, cnt):
-        if(len(route) == 2):
-            leafNode = Node(self, NULL, route)
+    def createDecisionTree(self, route, attributes):
+        if(len(route) < 2):
+            leafNode = Node("LeafNode", route[0], [], "undetermined", self, NULL)
             self.children.append(leafNode)
-            print('created leaf node: ' + str(leafNode.targetFeatureValue) +  "    parent node is: " + str(leafNode.parent.targetFeatureValue))
-        elif(len(route) >= 3):
-            instances = route[1:]
-            sortedData = []
-            for x in range(0, len(route[1])):
-                newlist = [feature[x] for feature in instances]
-                sortedData.append(newlist)
-            infoGainArr = self.getInformationGain(instances, sortedData)
-            max_value = max(infoGainArr)
-            max_index = infoGainArr.index(max_value)
-            print(max_index)
-            print('info gain array; ' + str(infoGainArr))
-            instances = self.getInstances(infoGainArr, instances, attributes)
-            print('instances')
-            for i in instances:
-                print(i)
+        if(len(route) == 2):
+            leafNode = Node("LeafNode", route[0], [], route[1][-1], self, NULL)
+            self.children.append(leafNode)
+        if(len(route) > 2):
+            instancesArr = route[1:]
+            allTheSame = True
+            initial = instancesArr[0][-1]
+            for i in instancesArr:
+                if initial != i[-1]:
+                    allTheSame = False
             
+            if(allTheSame):
+                leafNode = Node("LeafNode", route[0], [], instancesArr[0][-1], self, NULL)
+                self.children.append(leafNode)
+            else:
+                sortedData = self.sortData(instancesArr)
+                infoGainArr = self.getInformationGain(instancesArr, sortedData)
+                print(infoGainArr)
+                print(attributes)
+                max_value = max(infoGainArr)
+                max_index = infoGainArr.index(max_value)
+                print(max_index)
+                print(attributes[max_index])
+                rootFeature = attributes[max_index]
+                targets = rootFeature[-1]
+                targets = targets.replace('{', '')
+                targets = targets.replace('}', '')
+                targets = targets.split(',')
+                instancesArray = []
+                for value in targets:
+                    arr = []
+                    arr.append(value)
+                    for instance in instancesArr:
+                        if(instance[max_index] == value):
+                            del instance[max_index]
+                            arr.append(instance)
+                    instancesArray.append(arr)
+                for i in instancesArray:
+                    print(i)
 
-            treeNode = Node(self, instances, attributes[max_index])
-            treeNode.targetFeatureValue[0] = route[0]
-            self.children.append(treeNode)
-            print("created tree node: " + str(treeNode.targetFeatureValue)+ "    parent node is: " + str(treeNode.parent.targetFeatureValue))
-            treeNode.iterateRoutes(instances, attributes, cnt)
-            
+                treeNode = Node("TreeNode", route[0], [], rootFeature, self, instancesArray)
+                
+                self.children.append(treeNode)
+                treeNode.iterateRoutes(instancesArray, attributes)
+                print('\n')
 
-    def iterateRoutes(self, routes, attributes, cnt):
+    def iterateRoutes(self, routes, attributes):
         for route in routes:
-            self.createDecisionTree(route, attributes, cnt)
-        cnt = cnt + 1
+            self.createDecisionTree(route, attributes)
 
-    def printNode(self):    
+    def printNode(self):  
+        print("Node Type: " + str(self.nodeType) + ":   Node value: " + str(self.nodeLabel))
         for i in self.children:
             i.printNode()
         # print(self.targetFeatureValue)
         # print(self.routes)
 
     def predict(self, instance):
-        targets = []
-        if(len(instance) <= 1):
-            return self.targetFeatureValue[1]
-        print(self.targetFeatureValue)
-        if(self.targetFeatureValue[-1][0] == '{'):
-            targets = self.targetFeatureValue[-1]
-            targets = targets.replace('{', '')
-            targets = targets.replace('}', '')
-            targets = targets.split(',')
-        print(targets)
-        for i in self.children:
-            print(instance[0])
-            print(i.targetFeatureValue[0])
-            if(instance[0] == i.targetFeatureValue[0]):
-                newInstance = instance[1:]
-                print("new instance; " + str(newInstance))
-                i.predict(newInstance)
+        cpyInstance = instance
+        tempNode = self
+        if(self.nodeType == "LeafNode"):
+            print('hit leaf node')
+            print('prediction is: ' + str(self.nodeLabel))
+            # ans = str(self.nodeLabel)
+            # return ans
+        else:
+            for i in instance:
+                for x in self.children:
+                    if i == x.path:
+                        cpyInstance.remove(i)
+                        tempNode = x
+                        break
+            tempNode.predict(cpyInstance)
+
+            # for i in self.children:
+            #     if(str(instance[0]) == str(i.path)):
+            #         print('found it')
+            #         cpyInstance = cpyInstance[1:]
+            #         print(cpyInstance)
+            #         tempNode = i
+            #         break
+            # tempNode.predict(cpyInstance)
+            
+       
                 
 
 class id3Algorithm:
@@ -295,6 +337,8 @@ class id3Algorithm:
         data.getDataSet()
         data.getSortedData()
         data.getMinMaxAndDiscreteFeatures()
+        for i in data.myDataSetSorted:
+            print(i)
         infoGainArray = data.getInformationGain(data.myDataSetSorted)
         print(str(infoGainArray))
         max_value = max(infoGainArray)
@@ -302,6 +346,7 @@ class id3Algorithm:
         print(max_index)
         rootFeature = data.attributes[max_index]
         del data.attributes[max_index]
+        del data.attributes[-1]
         targets = rootFeature[-1]
         targets = targets.replace('{', '')
         targets = targets.replace('}', '')
@@ -315,18 +360,20 @@ class id3Algorithm:
                     del instance[max_index]
                     arr.append(instance)
             instancesArray.append(arr)
-
-        dataSetCopy = data.myDataSet
-        sortedDataSetCopy = data.myDataSetSorted
-
-        self.rootNode = Node(NULL, instancesArray, rootFeature)
-        print("created tree node:  " + str(self.rootNode.targetFeatureValue) + "    parent node is: " + str(self.rootNode.parent))
+        
+        self.rootNode = Node("TreeNode",NULL, [],rootFeature,NULL,instancesArray)
+        print("created root node:  " + str(self.rootNode.nodeLabel) + "    parent node is: " + str(self.rootNode.parent))
+        print(data.attributes)
         for i in self.rootNode.routes:
             print(i)
-        self.rootNode.iterateRoutes(self.rootNode.routes, data.attributes, 1)
+        print('\n')
+        self.rootNode.iterateRoutes(self.rootNode.routes, data.attributes)
 
     def predictInstance(self, instance):
-        return self.rootNode.predict(instance)
+        self.rootNode.predict(instance)
+        # return ans
+
+
 
 id3 = id3Algorithm()
 id3.id3Algorithm()
@@ -334,8 +381,22 @@ print('\n')
 print('\n')
 print('\n')
 id3.printTree()
-prediction = id3.predictInstance(['low', 'false', 'steep'])
-print("prediction: " + str(prediction))
+
+testInstances = [
+    ['false', 'steep', 'high'],
+    ['true', 'moderate', 'low'],
+    ['true', 'steep', 'medium'],
+    ['false', 'steep', 'medium'],
+    ['false', 'flat', 'high'],
+    ['true', 'steep', 'highest'],
+    ['true', 'steep', 'high'],
+    ['false', 'moderate', 'high'],
+    ['true', 'flat', 'high']
+]
+
+for instance in testInstances:
+    id3.predictInstance(instance)
+# print("prediction: " + str(prediction))
 
 
 
