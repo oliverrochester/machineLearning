@@ -83,7 +83,6 @@ class knnAlgorithm:
         newDataSet.getDataSet()
         newDataSet.getSortedData()
         self.dataset = newDataSet.myDataSet
-        self.instanceToPredict = ["5.1","3.5","1.5","0.3"]
 
     def isfloat(self, num):
         try:
@@ -101,22 +100,22 @@ class knnAlgorithm:
         distance = math.sqrt(distance)
         return distance
 
-    def knnAlgorithm(self):
+    def nnAlgorithm(self, instanceToPredict):
         shortestDistanceInstance = NULL
         shortestDistanceSoFar = NULL
         for instance in self.dataset:
             newArr = []
             for value in range(0, len(instance) - 1):
-                if(self.isfloat(value) or str(value).isnumeric()):
+                if(self.isfloat(instance[value]) or str(instance[value]).isnumeric()):
                     newArr.append(instance[value])
                 else:
-                    if(instance[value] == self.instanceToPredict[value]):
+                    if(instance[value] == instanceToPredict[value]):
                         newArr.append('1.0')
-                        self.instanceToPredict[value] = '1.0'
+                        instanceToPredict[value] = '1.0'
                     else:
                         newArr.append('2.0')
-                        self.instanceToPredict[value] = '1.0'
-            distance = self.getDistance(newArr, self.instanceToPredict)  
+                        instanceToPredict[value] = '1.0'
+            distance = self.getDistance(newArr, instanceToPredict)  
             if(shortestDistanceSoFar == NULL):
                 shortestDistanceSoFar = distance
                 shortestDistanceInstance = instance
@@ -126,11 +125,65 @@ class knnAlgorithm:
                     shortestDistanceInstance = instance
         return shortestDistanceInstance
 
+    def sortArray(self, arr):
+        cpyArr = arr
+        cnt = 0
+        while(cnt != len(cpyArr)):
+            for x in range(0, len(cpyArr)-1):
+               if(cpyArr[x][0] > cpyArr[x+1][0]):
+                   temp = cpyArr[x]
+                   cpyArr[x] = cpyArr[x+1]
+                   cpyArr[x+1] = temp
+            cnt = cnt + 1
+        return cpyArr
 
-instanceToPredict = []
+    def knnAlgorithm(self, k, instanceToPredict):
+        endArray = []
+        for instance in self.dataset:
+            newArr = []
+            tempArr = []
+            for value in range(0, len(instance) - 1):
+                if(self.isfloat(instance[value]) or str(instance[value]).isnumeric()):
+                    newArr.append(instance[value])
+                else:
+                    if(instance[value] == instanceToPredict[value]):
+                        newArr.append('1.0')
+                        instanceToPredict[value] = '1.0'
+                    else:
+                        newArr.append('2.0')
+                        instanceToPredict[value] = '1.0'
+            distance = self.getDistance(newArr, instanceToPredict)  
+            tempArr.append(distance)
+            tempArr.append(instance[-1])
+            endArray.append(tempArr)
+        endArray = self.sortArray(endArray)
+        kthArray = []
+        for x in range(0, k - 1):
+            kthArray.append(endArray[x][1])
+
+        if(self.isfloat(kthArray[0]) or str(kthArray[0]).isnumeric()):
+            return sum(kthArray) / len(kthArray)
+        else:
+            return max(set(kthArray), key = kthArray.count)
+ 
+
+
 alg = knnAlgorithm()
-prediction = alg.knnAlgorithm()
-print("Prediction is:  " + str(prediction[-1]))
+test = knnAlgorithm()
+setLength = len(test.dataset)
+amountCorrect = 0
+print("Evaluating...")
+for i in test.dataset:
+    instance = i[:-1]
+    prediction = alg.knnAlgorithm(5, instance)
+    # prediction = prediction[-1]
+    if(prediction == i[-1]):
+        amountCorrect = amountCorrect + 1
+
+print("Accuracy: " + str(amountCorrect / setLength))
+
+# 
+# print("Prediction is:  " + str(prediction))
 
 
 
