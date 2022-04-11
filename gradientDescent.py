@@ -1,6 +1,6 @@
 from asyncio.windows_events import NULL
 import math
-from traceback import print_tb
+import random
 
 class dataSet:
     def __init__(self):
@@ -52,7 +52,7 @@ class dataSet:
 
     def getSortedData(self):
         finalData = []
-        for x in range(0, len(self.attributes) + 1):
+        for x in range(0, len(self.attributes)):
             newlist = [feature[x] for feature in self.myDataSet]
             finalData.append(newlist)
         self.myDataSetSorted = finalData
@@ -78,73 +78,69 @@ class dataSet:
                 print("hello")
 
 
-class NaiveBayes:
+class GradientDescent:
     def __init__(self):
         newDataSet = dataSet()
         newDataSet.getDataSet()
         newDataSet.getSortedData()
         self.dataset = newDataSet.myDataSet
-        self.sortedDataSet = newDataSet.myDataSetSorted
-        self.totalInstances = len(self.sortedDataSet[-1])
-        self.structure = []
+        self.weights = self.getWeights()
+        self.summedWeights = []
+    
+    def getWeights(self):
+        weightList = []
+        for x in range(0, len(self.dataset[0]) - 1):
+           weightList.append(random.random())
 
-    def setUpStructure(self, targetList):
-        sortedDataSet = self.sortedDataSet[:-1]
-        structure = []
-        for value in targetList:       #iterating over yes and no    
-            for featureValue in sortedDataSet:
-                featureValueSet = set(featureValue)
-                featureValueSet = list(featureValueSet)
-                for feature in featureValueSet:
-                    cnt = 1
-                    arr = []
-                    arr.append(value)
-                    arr.append(feature)
-                    for instance in self.dataset:
-                        if feature in instance and instance[-1] == value:
-                            cnt = cnt + 1
-                    arr.append(cnt)
-                    structure.append(arr)
-        self.structure = structure
-        for x in self.structure:
-            print(x)
-        print('\n')
-        
+        weightList = [-.146,.185,-.044,.119]            #potentially take this line out later
+        print(weightList)
+        return weightList
 
-    def naiveBayesAlgorithm(self, instance):
-        targetList = self.sortedDataSet
-        targetListSet = set(targetList[-1])
-        targetListSet = list(targetListSet)
-        self.setUpStructure(targetListSet)
+    def GD(self):
+        x = 0
+        improved = True
+        notImprovedCnt = 0
+        previousFirstWeight = 0.00
+        while(improved):
+            summedErrorDeltas = []
+            sumOfSquaredError = 0.00
+            sumOfSquaredErrorDividedByTwo = 0.00
+            for instance in self.dataset:
+                t_1 = instance[-1]
+                d_1 = instance[:-1]
+                M_w = 0.00
+                for num in range(0,len(d_1)):
+                    M_w = M_w + (float(d_1[num]) * float(self.weights[num]))
 
-        probabilities = []
-        for value in targetListSet:
-            
-            prob = 0.0
-            for feature in instance:
-                for item in self.structure:
-                    if(value == item[0] and feature in item):
-                        prob = float(prob) + (float(item[-1] / float(self.totalInstances)))
-            probabilities.append(prob)
-                        
-        # print(probabilities)   
-        max_item = max(probabilities)
-        index = probabilities.index(max_item)
-        return targetListSet[index]
+                error = float(t_1) - float(M_w)
+                squaredError = error * error
+                sumOfSquaredError = sumOfSquaredError + squaredError
+                errorDeltaArray = []
+                for num in range(0,len(self.weights)):
+                    errorDeltaArray.append(float(error) * float(d_1[num]))
 
-        
-alg = NaiveBayes()
-test = NaiveBayes()
-print("Evaluating...")
-setLength = len(test.dataset)
-amountCorrect = 0
-for i in test.dataset:
-    instance = i[:-1]
-    prediction = alg.naiveBayesAlgorithm(instance)
-    if(prediction == i[-1]):
-        amountCorrect = amountCorrect + 1
+                if(len(summedErrorDeltas) == 0):
+                    summedErrorDeltas = errorDeltaArray
+                else:
+                    for num in range(0,len(errorDeltaArray)):
+                        summedErrorDeltas[num] = summedErrorDeltas[num] + errorDeltaArray[num]
 
-print("Accuracy: %" + str(amountCorrect / setLength))
+            for num in range(0,len(summedErrorDeltas)):
+                self.weights[num] = round(float(self.weights[num]) + (summedErrorDeltas[num] * 0.00000002),6)
+                 
+            # print(self.weights)
 
+            sumOfSquaredErrorDividedByTwo = sumOfSquaredError / 2
+            x = x + 1
+            if(self.weights[0] == previousFirstWeight):
+                notImprovedCnt = notImprovedCnt + 1
+            else:
+                notImprovedCnt = 0
 
+            previousFirstWeight = self.weights[0]
+            if(notImprovedCnt == 100):
+                improved = False
 
+        print("interations: " + str(x))
+newGradientDescent = GradientDescent()
+newGradientDescent.GD()
